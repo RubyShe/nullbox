@@ -97,5 +97,13 @@ export const api = {
   /** Yeet = close (status becomes `resolved`). */
   yeetTicket: (id: string) =>
     request<Ticket>("POST", `/tickets/${id}/yeet`, { headers: authHeaders() }),
+
+  // payments (Stripe Checkout)
+  createCheckout: () => request<{ id: string; url: string }>("POST", "/checkout"),
+  getCheckout: (id: string) =>
+    request<{ id: string; status: string; payment_status: string }>(
+      "GET",
+      `/checkout/${encodeURIComponent(id)}`,
+    ),
   backlogStats: () => request<BacklogStats>("GET", "/stats/backlog", { headers: authHeaders() }),
 };

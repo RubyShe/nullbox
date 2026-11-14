@@ -17,6 +17,9 @@ async fn app() -> Router {
         cors_allowed_origins: vec!["http://localhost:5173".into()],
         public_web_url: "http://localhost:5173".into(),
         admin_token: "test-admin-token".into(),
+        stripe_api_key: None,
+        stripe_price_id: "price_test".into(),
+        stripe_checkout_mode: "subscription".into(),
     };
     http::router(AppState::new(pool, config))
 }
@@ -155,4 +158,11 @@ async fn admin_export_needs_the_admin_token() {
     let (status, tickets) = send(&app, "GET", "/api/admin/export", &admin, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(tickets[0]["customer_email"], "a@example.com");
+}
+
+#[tokio::test]
+async fn checkout_is_off_without_a_stripe_key() {
+    let app = app().await;
+    let (status, _) = send(&app, "POST", "/api/checkout", &[], None).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
 }
