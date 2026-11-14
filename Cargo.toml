@@ -16,6 +16,11 @@ base64 = "0.23.1"
 chrono = { version = "0.4.45", default-features = false, features = ["clock", "serde", "std"] }
 dotenvy = "0.15.7"
 http-body-util = "0.1.5"
+opentelemetry = { version = "0.33.1", default-features = false, features = ["trace", "logs"] }
+opentelemetry-appender-tracing = "0.33.1"
+# Plain HTTP/protobuf over a blocking reqwest client: the SDK's batch processors export from their own thread, so no async runtime feature is needed.
+opentelemetry-otlp = { version = "0.33.1", default-features = false, features = ["http-proto", "reqwest-blocking-client", "reqwest-rustls", "trace", "logs"] }
+opentelemetry_sdk = { version = "0.33.1", default-features = false, features = ["trace", "logs"] }
 percent-encoding = "2.3.2"
 rand = "0.10.3"
 serde = { version = "1.0.229", features = ["derive"] }
@@ -27,6 +32,7 @@ tokio = { version = "1.53.2", features = ["macros", "rt-multi-thread", "net", "s
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.7.1", features = ["cors", "trace"] }
 tracing = "0.1.44"
+tracing-opentelemetry = "0.34.0"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 ts-rs = { version = "12.0.1", features = ["uuid-impl", "chrono-impl"] }
 uuid = { version = "1.27.0", features = ["v7", "serde"] }

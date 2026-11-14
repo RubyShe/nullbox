@@ -3,6 +3,7 @@
 mod admin;
 mod customer;
 pub mod extract;
+mod trace;
 mod utility;
 mod worker;
 
@@ -42,7 +43,9 @@ pub fn router(state: AppState) -> Router {
 /// Routes outside `/api` (an MCP server at `/mcp`, say) go next to the `nest` in
 /// `router`, so they pass through here too.
 pub fn middleware<S: Clone + Send + Sync + 'static>(router: Router<S>, config: &Config) -> Router<S> {
-    router.layer(cors(config)).layer(TraceLayer::new_for_http())
+    router
+        .layer(cors(config))
+        .layer(TraceLayer::new_for_http().make_span_with(trace::make_span).on_response(trace::OnResponse::default()))
 }
 
 /// CORS for the web app on another origin (Vite in dev, Tauri). `Authorization` is
