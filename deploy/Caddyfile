@@ -3,6 +3,9 @@ team-04.fasthacks.cloud {
     handle /api/* {
         reverse_proxy api:3000
     }
+    handle /mcp {
+        reverse_proxy api:3000
+    }
     handle {
         root * /srv
         try_files {path} /index.html

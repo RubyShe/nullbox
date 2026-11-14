@@ -19,6 +19,10 @@ pub struct Config {
     pub stripe_price_id: String,
     /// `STRIPE_CHECKOUT_MODE`: `subscription` for a recurring price, `payment` for a one-time price.
     pub stripe_checkout_mode: String,
+    /// `MCP_TOKEN`: bearer token for the MCP server at `/mcp`. Unset = every MCP request gets 401.
+    pub mcp_token: Option<String>,
+    /// `MCP_ACTOR_NAME`: the worker name that MCP replies and updates are recorded under.
+    pub mcp_actor_name: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -50,6 +54,8 @@ impl Config {
             stripe_api_key: std::env::var("STRIPE_API_KEY").ok().filter(|key| !key.trim().is_empty()),
             stripe_price_id: var("STRIPE_PRICE_ID", "price_1UWURXE6nIS5HOwPHs0C8GYV"),
             stripe_checkout_mode: var("STRIPE_CHECKOUT_MODE", "subscription"),
+            mcp_token: std::env::var("MCP_TOKEN").ok().map(|t| t.trim().to_owned()).filter(|t| !t.is_empty()),
+            mcp_actor_name: var("MCP_ACTOR_NAME", "AI agent (MCP)"),
         })
     }
 }

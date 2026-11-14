@@ -11,6 +11,8 @@ services:
       # `docker compose up -d api`. Never commit the value.
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       STRIPE_API_KEY: ${STRIPE_API_KEY:-}
+      # Bearer token for the MCP server at /mcp. Empty = MCP refuses everyone.
+      MCP_TOKEN: ${MCP_TOKEN:-}
       RUST_LOG: info,tower_http=info
       # OpenTelemetry export. Values come from the host's environment or the `.env` next to this file;
       # empty (the default) keeps export off. The API key stays out of the repository.

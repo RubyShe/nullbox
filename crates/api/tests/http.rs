@@ -24,6 +24,8 @@ async fn app_with_admin_token(admin_token: &str) -> Router {
         stripe_api_key: None,
         stripe_price_id: "price_test".into(),
         stripe_checkout_mode: "subscription".into(),
+        mcp_token: Some(MCP_TOKEN.into()),
+        mcp_actor_name: "AI agent (MCP)".into(),
     };
     http::router(AppState::new(pool, config))
 }
@@ -185,4 +187,77 @@ async fn admin_export_is_locked_when_no_admin_token_is_configured() {
         let (status, _) = send(&app, "GET", "/api/admin/export", &headers, None).await;
         assert_eq!(status, StatusCode::FORBIDDEN);
     }
+}
+
+const MCP_TOKEN: &str = "test-mcp-token";
+
+/// One JSON-RPC call to `/mcp`, optionally with a bearer token.
+async fn mcp(app: &Router, token: Option<&str>, body: Value) -> (StatusCode, Option<String>, Value) {
+    let mut req = Request::builder()
+        .method("POST")
+        .uri("/mcp")
+        .header("content-type", "application/json")
+        .header("accept", "application/json, text/event-stream");
+    if let Some(token) = token {
+        req = req.header("authorization", format!("Bearer {token}"));
+    }
+    let res = app.clone().oneshot(req.body(Body::from(body.to_string())).unwrap()).await.unwrap();
+    let status = res.status();
+    let session = res.headers().get("mcp-session-id").map(|v| v.to_str().unwrap().to_owned());
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    (status, session, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+}
+
+#[tokio::test]
+async fn mcp_refuses_requests_without_the_token() {
+    let app = app().await;
+    let list = json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/list" });
+    assert_eq!(mcp(&app, None, list.clone()).await.0, StatusCode::UNAUTHORIZED);
+    assert_eq!(mcp(&app, Some("wrong"), list).await.0, StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn mcp_initializes_lists_tools_and_reads_the_inbox() {
+    let app = app().await;
+    let init = json!({ "jsonrpc": "2.0", "id": 1, "method": "initialize",
+        "params": { "protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": { "name": "test", "version": "1" } } });
+    let (status, session, body) = mcp(&app, Some(MCP_TOKEN), init).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(session.is_some());
+    assert_eq!(body["result"]["protocolVersion"], "2025-11-25");
+
+    let note = json!({ "jsonrpc": "2.0", "method": "notifications/initialized" });
+    assert_eq!(mcp(&app, Some(MCP_TOKEN), note).await.0, StatusCode::ACCEPTED);
+
+    let (_, _, body) = mcp(&app, Some(MCP_TOKEN), json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" })).await;
+    let names: Vec<&str> =
+        body["result"]["tools"].as_array().unwrap().iter().map(|t| t["name"].as_str().unwrap()).collect();
+    assert!(names.contains(&"list_tickets") && names.contains(&"reply_to_ticket"));
+
+    let (status, created) = send(
+        &app,
+        "POST",
+        "/api/tickets",
+        &[],
+        Some(json!({
+        "subject": "Printer on fire", "body": "Again.", "severity": "p1" })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let id = created["ticket"]["id"].as_str().unwrap();
+
+    let call = |id: u32, name: &str, args: Value| {
+        json!({ "jsonrpc": "2.0", "id": id, "method": "tools/call",
+        "params": { "name": name, "arguments": args } })
+    };
+    let (_, _, body) = mcp(&app, Some(MCP_TOKEN), call(3, "list_tickets", json!({}))).await;
+    assert_eq!(body["result"]["isError"], false);
+    assert!(body["result"]["content"][0]["text"].as_str().unwrap().contains("Printer on fire"));
+
+    let (_, _, body) =
+        mcp(&app, Some(MCP_TOKEN), call(4, "reply_to_ticket", json!({ "ticket_id": id, "body": "On it." }))).await;
+    assert_eq!(body["result"]["isError"], false);
+
+    let (_, _, body) = mcp(&app, Some(MCP_TOKEN), call(5, "get_ticket", json!({ "ticket_id": "not-a-uuid" }))).await;
+    assert_eq!(body["result"]["isError"], true);
 }
