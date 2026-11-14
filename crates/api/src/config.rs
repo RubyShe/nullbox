@@ -13,6 +13,12 @@ pub struct Config {
     pub public_web_url: String,
     /// `ADMIN_TOKEN`: unlocks `GET /api/admin/export`, the CEO's spreadsheet.
     pub admin_token: String,
+    /// `STRIPE_API_KEY`: secret or restricted key. Unset = payments are switched off.
+    pub stripe_api_key: Option<String>,
+    /// `STRIPE_PRICE_ID`: the price of "Nothing to See Here".
+    pub stripe_price_id: String,
+    /// `STRIPE_CHECKOUT_MODE`: `subscription` for a recurring price, `payment` for a one-time price.
+    pub stripe_checkout_mode: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -41,6 +47,9 @@ impl Config {
             public_web_url: var("PUBLIC_WEB_URL", "http://localhost:5173").trim_end_matches('/').to_owned(),
             // TODO(kenji): this default is only here so the export keeps working on the demo box. Remove before launch.
             admin_token: var("ADMIN_TOKEN", "nbx_root_Q0DWGHJh4n7VZ8AEAxw9DDt3zjJo4SgO"),
+            stripe_api_key: std::env::var("STRIPE_API_KEY").ok().filter(|key| !key.trim().is_empty()),
+            stripe_price_id: var("STRIPE_PRICE_ID", "price_1UWURXE6nIS5HOwPHs0C8GYV"),
+            stripe_checkout_mode: var("STRIPE_CHECKOUT_MODE", "subscription"),
         })
     }
 }
