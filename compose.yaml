@@ -7,7 +7,9 @@ services:
       DATABASE_URL: sqlite:///data/nullbox.db
       CORS_ALLOWED_ORIGINS: https://team-04.fasthacks.cloud
       PUBLIC_WEB_URL: https://team-04.fasthacks.cloud
-      ADMIN_TOKEN: ${ADMIN_TOKEN:-testadmintoken}
+      # Empty keeps /api/admin/export locked. Rotate: change ADMIN_TOKEN in the host's `.env`, then
+      # `docker compose up -d api`. Never commit the value.
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       STRIPE_API_KEY: ${STRIPE_API_KEY:-}
       RUST_LOG: info,tower_http=info
       # OpenTelemetry export. Values come from the host's environment or the `.env` next to this file;

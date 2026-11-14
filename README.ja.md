@@ -86,7 +86,7 @@ migrations/                  SQL マイグレーション。バイナリに埋�
 | PATCH | `/tickets/{id}` | `{ status?, severity?, assignee_name? }`（`""` で担当を解除） |
 | POST | `/tickets/{id}/yeet` | クローズ: ステータスを `resolved`（「ぶん投げ済み」）にします |
 | GET | `/stats/backlog` | `{ open_count, beast_mood, oldest_open_age_secs }` |
-| GET | `/admin/export` | すべてのチケット。CEO のスプレッドシート用。ヘッダー `X-Admin-Token` が必要 |
+| GET | `/admin/export` | すべてのチケット。CEO のスプレッドシート用。ヘッダー `X-Admin-Token` または `Authorization: Bearer` が必要 |
 | GET | `/healthz` | 死活確認 |
 | GET | `/teapot` | 418。RFC 2324 の定めるとおり |
 

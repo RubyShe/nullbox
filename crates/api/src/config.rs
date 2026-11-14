@@ -11,7 +11,7 @@ pub struct Config {
     pub cors_allowed_origins: Vec<String>,
     /// `PUBLIC_WEB_URL`: where the web app lives; used to build secret access links.
     pub public_web_url: String,
-    /// `ADMIN_TOKEN`: unlocks `GET /api/admin/export`, the CEO's spreadsheet.
+    /// `ADMIN_TOKEN`: unlocks `GET /api/admin/export`, the CEO's spreadsheet. Empty disables the export.
     pub admin_token: String,
     /// `STRIPE_API_KEY`: secret or restricted key. Unset = payments are switched off.
     pub stripe_api_key: Option<String>,
@@ -45,8 +45,8 @@ impl Config {
                 .filter(|origin| !origin.is_empty())
                 .collect(),
             public_web_url: var("PUBLIC_WEB_URL", "http://localhost:5173").trim_end_matches('/').to_owned(),
-            // TODO(kenji): this default is only here so the export keeps working on the demo box. Remove before launch.
-            admin_token: var("ADMIN_TOKEN", "REDACTED_LEAKED_ADMIN_TOKEN"),
+            // No default: a built-in secret is a leaked secret. Empty keeps the export locked.
+            admin_token: var("ADMIN_TOKEN", "").trim().to_owned(),
             stripe_api_key: std::env::var("STRIPE_API_KEY").ok().filter(|key| !key.trim().is_empty()),
             stripe_price_id: var("STRIPE_PRICE_ID", "price_1UWURXE6nIS5HOwPHs0C8GYV"),
             stripe_checkout_mode: var("STRIPE_CHECKOUT_MODE", "subscription"),
