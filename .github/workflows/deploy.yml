@@ -30,12 +30,13 @@ jobs:
     # needs: test
     # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      HOST: 35.77.90.106
+      USER: deploy
     steps:
-      - name: Deploy over SSH
+      - name: Setup SSH & sync
         env:
           KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
-          HOST: 35.77.90.106
-          USER: deploy
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
@@ -46,8 +47,36 @@ jobs:
             cd ~/Workspaces/nullbox
             git fetch origin main
             git reset --hard origin/main
-            docker compose up -d --build
+            docker buildx inspect nullbox >/dev/null 2>&1 || docker buildx create --name nullbox --driver docker-container
           '
+
+      - name: Build api
+        run: |
+          ssh "$USER@$HOST" '
+            set -e
+            cd ~/Workspaces/nullbox
+            mkdir -p "$HOME/.cache/buildx/api"
+            docker buildx build --builder nullbox \
+              --cache-from "type=local,src=$HOME/.cache/buildx/api" \
+              --cache-to "type=local,dest=$HOME/.cache/buildx/api,mode=max" \
+              --load -t nullbox-api -f Dockerfile.api .
+          '
+
+      - name: Build web
+        run: |
+          ssh "$USER@$HOST" '
+            set -e
+            cd ~/Workspaces/nullbox
+            mkdir -p "$HOME/.cache/buildx/web"
+            docker buildx build --builder nullbox \
+              --cache-from "type=local,src=$HOME/.cache/buildx/web" \
+              --cache-to "type=local,dest=$HOME/.cache/buildx/web,mode=max" \
+              --load -t nullbox-web -f Dockerfile.web .
+          '
+
+      - name: Deploy
+        run: |
+          ssh "$USER@$HOST" 'cd ~/Workspaces/nullbox && docker compose up -d --no-build'
           sleep 5
           curl -fsS https://team-04.fasthacks.cloud/api/healthz
 
