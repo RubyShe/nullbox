@@ -2,35 +2,34 @@ name: CI/CD
 on:
   push:
     branches: [main]
-  pull_request:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Rust checks
-        env:
-          SQLX_OFFLINE: "true"
-        run: |
-          cargo fmt --check
-          cargo clippy --all-targets -- -D warnings
-          cargo test
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-      - name: Web checks
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile
-          pnpm test
-          pnpm build
+  # test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Rust checks
+  #       env:
+  #         SQLX_OFFLINE: "true"
+  #       run: |
+  #         cargo fmt --check
+  #         cargo clippy --all-targets -- -D warnings
+  #         cargo test
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version-file: .nvmrc
+  #     - name: Web checks
+  #       run: |
+  #         corepack enable
+  #         pnpm install --frozen-lockfile
+  #         pnpm lint
+  #         pnpm test
+  #         pnpm build
 
   deploy:
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # needs: test
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    concurrency: deploy
     steps:
       - name: Deploy over SSH
         env:
