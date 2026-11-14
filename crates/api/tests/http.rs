@@ -132,6 +132,46 @@ async fn customer_and_worker_round_trip() {
 }
 
 #[tokio::test]
+async fn customer_link_cannot_open_another_ticket() {
+    let app = app().await;
+
+    let mut tickets = Vec::new();
+    for subject in ["A", "B"] {
+        let (status, created) =
+            send(&app, "POST", "/api/tickets", &[], Some(json!({ "subject": subject, "body": "x", "severity": "p3" })))
+                .await;
+        assert_eq!(status, StatusCode::CREATED);
+        let id = created["ticket"]["id"].as_str().unwrap().to_owned();
+        let token = created["access_token"].as_str().unwrap().to_owned();
+        tickets.push((id, token));
+    }
+    let [(id_a, token_a), (id_b, token_b)] = [tickets[0].clone(), tickets[1].clone()];
+
+    // A's token on B's ID: can't read, can't reply.
+    let (status, error) =
+        send(&app, "GET", &format!("/api/public/tickets/{id_b}"), &[("x-ticket-token", &token_a)], None).await;
+    assert_eq!((status, &error["code"]), (StatusCode::NOT_FOUND, &json!("not_found")));
+    let (status, error) = send(
+        &app,
+        "POST",
+        &format!("/api/public/tickets/{id_b}/messages"),
+        &[("x-ticket-token", &token_a)],
+        Some(json!({ "body": "intruder" })),
+    )
+    .await;
+    assert_eq!((status, &error["code"]), (StatusCode::NOT_FOUND, &json!("not_found")));
+
+    // B is untouched, and each link still works for its own ticket.
+    let (status, thread) =
+        send(&app, "GET", &format!("/api/public/tickets/{id_b}"), &[("x-ticket-token", &token_b)], None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(thread["messages"].as_array().unwrap().iter().all(|m| m["body"] != "intruder"));
+    let (status, thread) =
+        send(&app, "GET", &format!("/api/public/tickets/{id_a}"), &[("x-ticket-token", &token_a)], None).await;
+    assert_eq!((status, &thread["ticket"]["subject"]), (StatusCode::OK, &json!("A")));
+}
+
+#[tokio::test]
 async fn errors_share_one_shape() {
     let app = app().await;
 
