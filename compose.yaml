@@ -1,0 +1,22 @@
+services:
+  api:
+    build: { context: ., dockerfile: Dockerfile.api }
+    restart: unless-stopped
+    environment:
+      BIND_ADDR: 0.0.0.0:3000
+      DATABASE_URL: sqlite:///data/nullbox.db
+      CORS_ALLOWED_ORIGINS: https://team-04.fasthacks.cloud
+      PUBLIC_WEB_URL: https://team-04.fasthacks.cloud
+      ADMIN_TOKEN: ${ADMIN_TOKEN:testadmintoken}
+      RUST_LOG: info,tower_http=info
+    volumes: [ "api-data:/data" ]
+  web:
+    build: { context: ., dockerfile: Dockerfile.web }
+    restart: unless-stopped
+    ports: [ "80:80", "443:443" ]
+    volumes: [ "caddy-data:/data", "caddy-config:/config" ]
+    depends_on: [ api ]
+volumes:
+  api-data:
+  caddy-data:
+  caddy-config:
