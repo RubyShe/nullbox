@@ -9,6 +9,12 @@ services:
       PUBLIC_WEB_URL: https://team-04.fasthacks.cloud
       ADMIN_TOKEN: ${ADMIN_TOKEN:-testadmintoken}
       RUST_LOG: info,tower_http=info
+      # OpenTelemetry export. Values come from the host's environment or the `.env` next to this file;
+      # empty (the default) keeps export off. The API key stays out of the repository.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: nullbox-api
     volumes: [ "api-data:/data" ]
   web:
     build: { context: ., dockerfile: Dockerfile.web }
