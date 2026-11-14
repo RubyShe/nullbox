@@ -10,6 +10,7 @@ export const keys = {
   inbox: (status?: TicketStatus) => ["tickets", "list", status ?? "active"] as const,
   ticket: (id: string) => ["tickets", "detail", id] as const,
   customerTicket: (id: string) => ["public-ticket", id] as const,
+  audit: (q: string) => ["audit", q] as const,
 };
 
 export function useBacklogStats() {
@@ -21,6 +22,16 @@ export function useInbox(status?: TicketStatus) {
     queryKey: keys.inbox(status),
     queryFn: () => api.listTickets(status),
     refetchInterval: 15_000,
+  });
+}
+
+/** The admin token is part of the key's closure only, so it never lands in the cache key. */
+export function useAuditLog(adminToken: string, q: string) {
+  return useQuery({
+    queryKey: keys.audit(q),
+    queryFn: () => api.auditLog(adminToken, q),
+    enabled: Boolean(adminToken),
+    retry: false,
   });
 }
 

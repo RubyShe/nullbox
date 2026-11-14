@@ -5,20 +5,43 @@ use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::header::AUTHORIZATION;
 use nullbox_domain::Ticket;
+use serde::Deserialize;
 
-use super::extract::ADMIN_TOKEN_HEADER;
+use super::extract::{ADMIN_TOKEN_HEADER, ApiQuery};
+use crate::audit::{AuditEntry, DEFAULT_LIMIT};
 use crate::{ApiError, AppState};
 
 /// Every ticket, with customer names and emails. Guarded by `X-Admin-Token` or
 /// `Authorization: Bearer`, which must match `ADMIN_TOKEN` (see `config.rs`).
 /// An empty `ADMIN_TOKEN` locks the export for everyone.
 pub async fn export(State(state): State<AppState>, headers: HeaderMap) -> Result<Json<Vec<Ticket>>, ApiError> {
+    require_admin(&state, &headers)?;
+    Ok(Json(state.tickets.export().await?))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AuditQuery {
+    q: Option<String>,
+    limit: Option<i64>,
+}
+
+/// The audit trail, newest first. `q` is a substring match; same guard as the export.
+pub async fn audit_log(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    ApiQuery(query): ApiQuery<AuditQuery>,
+) -> Result<Json<Vec<AuditEntry>>, ApiError> {
+    require_admin(&state, &headers)?;
+    Ok(Json(state.audit.search(query.q.as_deref(), query.limit.unwrap_or(DEFAULT_LIMIT)).await?))
+}
+
+fn require_admin(state: &AppState, headers: &HeaderMap) -> Result<(), ApiError> {
     let expected = state.config.admin_token.as_str();
-    let presented = presented_token(&headers);
+    let presented = presented_token(headers);
     if expected.is_empty() || !presented.is_some_and(|token| constant_time_eq(token.as_bytes(), expected.as_bytes())) {
         return Err(ApiError::Forbidden);
     }
-    Ok(Json(state.tickets.export().await?))
+    Ok(())
 }
 
 fn presented_token(headers: &HeaderMap) -> Option<&str> {

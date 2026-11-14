@@ -18,7 +18,7 @@ pub const TICKET_TOKEN_HEADER: &str = "x-ticket-token";
 /// Anyone can claim to be anyone. To add SSO/JWT, replace only this extractor.
 ///
 /// It gets the `AppState`, so a real login can look up a session or a user here,
-/// and a refused request can be written to an audit log before the 401 goes out.
+/// Refused requests need no code here: `http::audit` records every request, with its status.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Actor {
     pub name: String,

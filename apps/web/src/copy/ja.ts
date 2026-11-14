@@ -119,6 +119,26 @@ const ja = {
     assignToMe: "引き受ける",
   },
 
+  audit: {
+    title: "監査ログ",
+    intro: "すべての API リクエストとチケットのイベントを、新しい順に表示します。トークンは指紋だけを保存しています。",
+    adminToken: "管理者トークン",
+    search: "検索",
+    searchPlaceholder: "件名のコード、パス、操作者、IP、トークンの指紋…",
+    empty: "その検索に一致する記録はありません。",
+    refusedBadge: "拒否",
+    columns: {
+      time: "日時",
+      kind: "種別",
+      actor: "操作者",
+      ip: "IP",
+      request: "リクエスト",
+      status: "ステータス",
+      credential: "資格情報",
+      summary: "概要",
+    },
+  },
+
   beast: {
     title: "バックログの獣",
     moods: {

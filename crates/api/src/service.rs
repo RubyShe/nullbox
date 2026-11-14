@@ -64,6 +64,7 @@ impl TicketService {
             ticket_id: ticket.id,
             number: ticket.number,
             severity: ticket.severity,
+            subject: ticket.subject.clone(),
         });
         Ok(CreatedTicket { ticket, access_token })
     }
