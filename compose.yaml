@@ -7,7 +7,7 @@ services:
       DATABASE_URL: sqlite:///data/nullbox.db
       CORS_ALLOWED_ORIGINS: https://team-04.fasthacks.cloud
       PUBLIC_WEB_URL: https://team-04.fasthacks.cloud
-      ADMIN_TOKEN: ${ADMIN_TOKEN:testadmintoken}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-testadmintoken}
       RUST_LOG: info,tower_http=info
     volumes: [ "api-data:/data" ]
   web:
