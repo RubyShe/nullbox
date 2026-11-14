@@ -1,0 +1,55 @@
+name: CI/CD
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust checks
+        env:
+          SQLX_OFFLINE: "true"
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Web checks
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm test
+          pnpm build
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency: deploy
+    steps:
+      - name: Deploy over SSH
+        env:
+          KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+          HOST: 35.77.90.106
+          USER: deploy
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+          ssh "$USER@$HOST" '
+            set -e
+            cd ~/Workspaces/nullbox
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose up -d --build
+          '
+          sleep 5
+          curl -fsS https://team-04.fasthacks.cloud/api/healthz
+
