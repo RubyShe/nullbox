@@ -27,6 +27,7 @@ jobs:
           pnpm build
 
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     env:
       HOST: 35.77.90.106
