@@ -1,0 +1,14 @@
+# Nullbox
+
+> Nullbox is a small, playful support ticketing system. Customers report problems, support workers answer them, and everyone works toward Inbox Zero while the Backlog Beast watches.
+
+## Pages
+
+- [Report a problem](https://team-04.fasthacks.cloud/): file a support ticket with a subject, a description and a severity.
+- [Upgrade](https://team-04.fasthacks.cloud/upgrade): Nullbox upgrade options.
+
+## For agents
+
+- [MCP server](https://team-04.fasthacks.cloud/mcp): Model Context Protocol endpoint for working with tickets.
+- [ARD manifest](https://team-04.fasthacks.cloud/.well-known/ard.json): machine-readable list of Nullbox's agent resources.
+- [Source code](https://github.com/RubyShe/nullbox): the Nullbox repository.

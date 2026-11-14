@@ -1,0 +1,21 @@
+{
+  "entries": [
+    {
+      "identifier": "urn:air:team-04.fasthacks.cloud:nullbox:mcp",
+      "displayName": "Nullbox MCP server",
+      "description": "Model Context Protocol server for Nullbox, a support ticketing system. Lets agents file and follow support tickets.",
+      "type": "application/mcp-server-card+json",
+      "data": {
+        "name": "nullbox",
+        "title": "Nullbox",
+        "description": "Support ticketing for Nullbox: report problems and follow up on tickets.",
+        "remotes": [{ "type": "streamable-http", "url": "https://team-04.fasthacks.cloud/mcp" }]
+      },
+      "representativeQueries": [
+        "report a problem to Nullbox support",
+        "open a support ticket",
+        "check the status of my support ticket"
+      ]
+    }
+  ]
+}

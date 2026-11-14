@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /inbox
+Disallow: /t/
+Disallow: /checkout/
+
+Sitemap: https://team-04.fasthacks.cloud/sitemap.xml
