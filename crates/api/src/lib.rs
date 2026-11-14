@@ -3,11 +3,13 @@
 //! Extension seams, each in one place:
 //! - auth: [`http::extract::Actor`]
 //! - authorization: [`policy::can`]
-//! - audit/webhooks/metrics: [`events::EventSink`]
+//! - audit: [`audit::AuditLog`] (domain events via [`audit::AuditEventSink`], requests via `http::audit`)
+//! - webhooks/metrics: [`events::EventSink`]
 //! - middleware (tracing, CORS, rate limits...): [`http::middleware`]
 //! - storage: [`repo::TicketRepository`]
 //! - settings: [`config::Config`]
 
+pub mod audit;
 pub mod config;
 pub mod db;
 pub mod dto;
@@ -29,13 +31,18 @@ pub use error::ApiError;
 #[derive(Clone)]
 pub struct AppState {
     pub tickets: Arc<service::TicketService>,
+    pub audit: Arc<dyn audit::AuditLog>,
     pub config: Arc<Config>,
 }
 
 impl AppState {
     pub fn new(pool: sqlx::SqlitePool, config: Config) -> Self {
+        let audit: Arc<dyn audit::AuditLog> = Arc::new(audit::SqliteAuditLog::new(pool.clone()));
         let repo = Arc::new(repo::SqliteTicketRepository::new(pool));
-        let events = Arc::new(events::TracingEventSink);
-        Self { tickets: Arc::new(service::TicketService::new(repo, events)), config: Arc::new(config) }
+        let events = Arc::new(events::FanOutEventSink::new(vec![
+            Arc::new(events::TracingEventSink),
+            Arc::new(audit::AuditEventSink::new(audit.clone())),
+        ]));
+        Self { tickets: Arc::new(service::TicketService::new(repo, events)), audit, config: Arc::new(config) }
     }
 }

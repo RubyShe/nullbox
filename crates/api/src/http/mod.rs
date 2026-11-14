@@ -1,6 +1,7 @@
 //! Routes and the middleware stack.
 
 mod admin;
+mod audit;
 mod customer;
 pub mod extract;
 mod mcp;
@@ -16,7 +17,7 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 use crate::{AppState, Config};
-use extract::{ACTOR_HEADER, TICKET_TOKEN_HEADER};
+use extract::{ACTOR_HEADER, ADMIN_TOKEN_HEADER, TICKET_TOKEN_HEADER};
 
 pub fn router(state: AppState) -> Router {
     let api = Router::new()
@@ -31,6 +32,7 @@ pub fn router(state: AppState) -> Router {
         .route("/stats/backlog", get(worker::backlog_stats))
         // admin
         .route("/admin/export", get(admin::export))
+        .route("/admin/audit", get(admin::audit_log))
         // payments
         .route("/checkout", post(payments::create_checkout))
         .route("/checkout/{id}", get(payments::get_checkout))
@@ -41,6 +43,8 @@ pub fn router(state: AppState) -> Router {
     let config = state.config.clone();
     let mcp = post(mcp::handle).get(mcp::no_stream).delete(mcp::end_session);
     middleware(Router::new().nest("/api", api).route("/mcp", mcp).fallback(utility::not_found), &config)
+        // Outermost, so it records every request, refused ones included.
+        .layer(axum::middleware::from_fn_with_state(state.clone(), audit::record))
         .with_state(state)
 }
 
@@ -78,6 +82,7 @@ fn cors(config: &Config) -> CorsLayer {
             header::CONTENT_TYPE,
             header::AUTHORIZATION,
             HeaderName::from_static(ACTOR_HEADER),
+            HeaderName::from_static(ADMIN_TOKEN_HEADER),
             HeaderName::from_static(TICKET_TOKEN_HEADER),
         ])
 }

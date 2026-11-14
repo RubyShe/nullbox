@@ -252,3 +252,29 @@
   background: var(--color-accent);
   color: #fff;
 }
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.auditTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.auditTable th,
+.auditTable td {
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border, #ddd);
+}
+
+.auditTable code {
+  word-break: break-all;
+}
+
+.refused {
+  background: color-mix(in srgb, var(--danger, #c0392b) 12%, transparent);
+}

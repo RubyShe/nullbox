@@ -25,6 +25,7 @@ pub enum DomainEvent {
         ticket_id: Uuid,
         number: i64,
         severity: Severity,
+        subject: String,
     },
     StatusChanged {
         ticket_id: Uuid,

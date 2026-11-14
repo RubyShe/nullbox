@@ -301,3 +301,58 @@ async fn mcp_initializes_lists_tools_and_reads_the_inbox() {
     let (_, _, body) = mcp(&app, Some(MCP_TOKEN), call(5, "get_ticket", json!({ "ticket_id": "not-a-uuid" }))).await;
     assert_eq!(body["result"]["isError"], true);
 }
+
+/// Searches the audit log as admin. Domain events are written from a spawned task,
+/// so wait (briefly) until at least `min` entries match.
+async fn audit_search(app: &Router, q: &str, min: usize) -> Vec<Value> {
+    let admin = [("x-admin-token", "test-admin-token")];
+    for _ in 0..50 {
+        let (status, entries) = send(app, "GET", &format!("/api/admin/audit?q={q}"), &admin, None).await;
+        assert_eq!(status, StatusCode::OK);
+        let entries = entries.as_array().unwrap().clone();
+        if entries.len() >= min {
+            return entries;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+    panic!("audit log never reached {min} entries for {q:?}");
+}
+
+#[tokio::test]
+async fn audit_log_records_created_tickets() {
+    let app = app().await;
+    let ticket = json!({ "subject": "HOT-XYZ123 hello", "body": "x", "severity": "p3" });
+    let (status, _) = send(&app, "POST", "/api/tickets", &[], Some(ticket)).await;
+    assert_eq!(status, StatusCode::CREATED);
+
+    let entries = audit_search(&app, "HOT-XYZ123", 1).await;
+    let created = entries.iter().find(|e| e["kind"] == "ticket_created").expect("ticket_created entry");
+    assert!(created["summary"].as_str().unwrap().contains("HOT-XYZ123"));
+    assert!(created["ticket_id"].is_string());
+}
+
+#[tokio::test]
+async fn audit_log_records_requests_with_a_bogus_token_without_storing_it() {
+    let app = app().await;
+    let (_, _) = send(&app, "GET", "/api/tickets", &[("authorization", "Bearer garbage-token-42")], None).await;
+
+    let entries = audit_search(&app, "bearer", 1).await;
+    let entry = entries.iter().find(|e| e["path"] == "/api/tickets").expect("request entry");
+    assert_eq!(entry["kind"], "http_request");
+    assert_eq!(entry["method"], "GET");
+    let credential = entry["credential"].as_str().unwrap();
+    assert!(credential.starts_with("bearer:"), "{credential}");
+    assert!(!entries.iter().any(|e| e.to_string().contains("garbage-token-42")));
+}
+
+#[tokio::test]
+async fn audit_log_is_admin_only_and_refusals_are_recorded() {
+    let app = app().await;
+    let (status, _) = send(&app, "GET", "/api/admin/audit", &[("x-admin-token", "nope")], None).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+
+    let entries = audit_search(&app, "refused", 1).await;
+    let refused = entries.iter().find(|e| e["path"] == "/api/admin/audit").expect("refusal entry");
+    assert_eq!(refused["status"], 403);
+    assert!(refused["credential"].as_str().unwrap().starts_with("admin-token:"));
+}

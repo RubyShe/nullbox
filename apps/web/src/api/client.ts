@@ -6,6 +6,7 @@
  * - Auth headers are added in `authHeaders()`: that's where a bearer token goes later.
  */
 import { getActorName } from "./actor";
+import type { AuditEntry } from "./generated/AuditEntry";
 import type { BacklogStats } from "./generated/BacklogStats";
 import type { CreateTicketRequest } from "./generated/CreateTicketRequest";
 import type { CreateTicketResponse } from "./generated/CreateTicketResponse";
@@ -97,6 +98,12 @@ export const api = {
   /** Yeet = close (status becomes `resolved`). */
   yeetTicket: (id: string) =>
     request<Ticket>("POST", `/tickets/${id}/yeet`, { headers: authHeaders() }),
+
+  // admin
+  auditLog: (adminToken: string, q: string) =>
+    request<AuditEntry[]>("GET", `/admin/audit?q=${encodeURIComponent(q)}`, {
+      headers: { "X-Admin-Token": adminToken },
+    }),
 
   // payments (Stripe Checkout)
   createCheckout: () => request<{ id: string; url: string }>("POST", "/checkout"),

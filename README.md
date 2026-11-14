@@ -87,6 +87,7 @@ stable and shared with TypeScript; `message` is English and for developers only.
 | POST | `/tickets/{id}/yeet` | close: sets status `resolved` ("Yeeted") |
 | GET | `/stats/backlog` | `{ open_count, beast_mood, oldest_open_age_secs }` |
 | GET | `/admin/export` | every ticket, for the CEO's spreadsheet; header `X-Admin-Token` or `Authorization: Bearer` |
+| GET | `/admin/audit?q=&limit=` | The audit log, newest first: every API request (refused ones too) and every ticket event. Tokens appear as fingerprints only. Needs the admin token. Web view at `/admin/audit` |
 | GET | `/healthz` | liveness |
 | GET | `/teapot` | 418, as specified by RFC 2324 |
 

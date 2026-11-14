@@ -122,6 +122,26 @@ const en = {
     assignToMe: "Take it",
   },
 
+  audit: {
+    title: "Audit log",
+    intro: "Every API request and every ticket event, newest first. Tokens are stored as fingerprints only.",
+    adminToken: "Admin token",
+    search: "Search",
+    searchPlaceholder: "Subject code, path, actor, IP, token fingerprint…",
+    empty: "Nothing recorded for that search.",
+    refusedBadge: "Refused",
+    columns: {
+      time: "Time",
+      kind: "Kind",
+      actor: "Actor",
+      ip: "IP",
+      request: "Request",
+      status: "Status",
+      credential: "Credential",
+      summary: "Summary",
+    },
+  },
+
   beast: {
     title: "Backlog Beast",
     moods: {

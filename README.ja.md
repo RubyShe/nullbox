@@ -87,6 +87,7 @@ migrations/                  SQL マイグレーション。バイナリに埋�
 | POST | `/tickets/{id}/yeet` | クローズ: ステータスを `resolved`（「ぶん投げ済み」）にします |
 | GET | `/stats/backlog` | `{ open_count, beast_mood, oldest_open_age_secs }` |
 | GET | `/admin/export` | すべてのチケット。CEO のスプレッドシート用。ヘッダー `X-Admin-Token` または `Authorization: Bearer` が必要 |
+| GET | `/admin/audit?q=&limit=` | 監査ログ（新しい順）。すべての API リクエスト（拒否されたものも）とチケットのイベントを記録します。トークンは指紋だけを残します。管理者トークンが必要。画面は `/admin/audit` |
 | GET | `/healthz` | 死活確認 |
 | GET | `/teapot` | 418。RFC 2324 の定めるとおり |
 
