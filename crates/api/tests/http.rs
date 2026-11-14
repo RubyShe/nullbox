@@ -10,13 +10,17 @@ use serde_json::{Value, json};
 use tower::ServiceExt;
 
 async fn app() -> Router {
+    app_with_admin_token("test-admin-token").await
+}
+
+async fn app_with_admin_token(admin_token: &str) -> Router {
     let pool = db::connect_in_memory().await.expect("in-memory db");
     let config = Config {
         bind_addr: "127.0.0.1:0".parse().unwrap(),
         database_url: "sqlite::memory:".into(),
         cors_allowed_origins: vec!["http://localhost:5173".into()],
         public_web_url: "http://localhost:5173".into(),
-        admin_token: "test-admin-token".into(),
+        admin_token: admin_token.into(),
         stripe_api_key: None,
         stripe_price_id: "price_test".into(),
         stripe_checkout_mode: "subscription".into(),
@@ -158,6 +162,13 @@ async fn admin_export_needs_the_admin_token() {
     let (status, tickets) = send(&app, "GET", "/api/admin/export", &admin, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(tickets[0]["customer_email"], "a@example.com");
+
+    let bearer = [("authorization", "Bearer test-admin-token")];
+    let (status, _) = send(&app, "GET", "/api/admin/export", &bearer, None).await;
+    assert_eq!(status, StatusCode::OK);
+    let wrong = [("authorization", "Bearer nope")];
+    let (status, _) = send(&app, "GET", "/api/admin/export", &wrong, None).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]
@@ -165,4 +176,13 @@ async fn checkout_is_off_without_a_stripe_key() {
     let app = app().await;
     let (status, _) = send(&app, "POST", "/api/checkout", &[], None).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn admin_export_is_locked_when_no_admin_token_is_configured() {
+    let app = app_with_admin_token("").await;
+    for headers in [vec![], vec![("x-admin-token", "")], vec![("authorization", "Bearer ")]] {
+        let (status, _) = send(&app, "GET", "/api/admin/export", &headers, None).await;
+        assert_eq!(status, StatusCode::FORBIDDEN);
+    }
 }
