@@ -7,8 +7,8 @@ English | [日本語](README.ja.md)
 A deliberately small, deliberately silly ticketing system. Customers report problems, workers
 answer them, and everyone works toward **Inbox Zero** while the **Backlog Beast** watches.
 
-This is the hackathon's starting point. It is a working product with **no** enterprise features:
-no auth, no CI/CD, no observability, no backups. Adding those is your job. The code leaves a clear
+This is the hackathon's starting point. It has a in-memory worker accounts, but no
+SSO, CI/CD, observability, or backups. Adding those is your job. The code leaves a clear
 seam for each one (see [Extension seams](#extension-seams)).
 
 ## Quickstart
@@ -86,16 +86,16 @@ stable and shared with TypeScript; `message` is English and for developers only.
 | PATCH | `/tickets/{id}` | `{ status?, severity?, assignee_name? }` (`""` unassigns) |
 | POST | `/tickets/{id}/yeet` | close: sets status `resolved` ("Yeeted") |
 | GET | `/stats/backlog` | `{ open_count, beast_mood, oldest_open_age_secs }` |
-| GET | `/admin/export` | every ticket, for the CEO's spreadsheet; header `X-Admin-Token` |
+| GET | `/admin/export` | every ticket, for the CEO's spreadsheet; header `X-Admin-Token`; disabled unless `ADMIN_TOKEN` is set |
 | GET | `/healthz` | liveness |
 | GET | `/teapot` | 418, as specified by RFC 2324 |
 
-Worker endpoints are **unprotected**: `X-Actor-Name` is whatever the client says it is.
+Worker endpoints require a session cookie. Sign up and log in at `/login`. Passwords must be at least 12 characters and are checked against the Have I Been Pwned range API; signup fails if the service cannot be reached. Passwords are Argon2-hashed in memory. Accounts and sessions are lost on API restart; sessions expire after eight hours. This is a demo, not a production identity system. It does not implement SSO. For HTTPS set `COOKIE_SECURE=true`; the frontend and API must be same-site for the SameSite=Lax cookie. For a phone, use HTTPS and configure the API URL, web URL, CORS origin and bind address to addresses reachable by the phone.
 
 ## Configuration
 
 API, from env vars or `.env` (see `.env.example` and `crates/api/src/config.rs`):
-`BIND_ADDR`, `DATABASE_URL`, `CORS_ALLOWED_ORIGINS`, `PUBLIC_WEB_URL`, `ADMIN_TOKEN`, `RUST_LOG`.
+`BIND_ADDR`, `DATABASE_URL`, `CORS_ALLOWED_ORIGINS`, `PUBLIC_WEB_URL`, `ADMIN_TOKEN`, `COOKIE_SECURE`, `RUST_LOG`.
 
 Web, at build time: `VITE_API_BASE_URL`, the origin of the API without `/api`. Unset, the bundle calls
 `http://localhost:3000`, which is only right on your laptop. For a deployment, set it to your site's
@@ -105,7 +105,7 @@ address, or to an empty value when one web server serves both the web app and `/
 
 | Want to add | Start here |
 |---|---|
-| Login: passwords, SSO, sessions | `Actor` extractor in `crates/api/src/http/extract.rs` (it gets the `AppState`); `authHeaders()` in `apps/web/src/api/client.ts`; for cookies across origins, see `cors()` in `crates/api/src/http/mod.rs` |
+| Login: passwords, SSO, sessions | `Actor` extractor and `crates/api/src/http/auth.rs`; session cookies are sent by `apps/web/src/api/client.ts` |
 | Roles / permissions | `policy::can` in `crates/api/src/policy.rs` (always `true` today) |
 | Audit log, webhooks, email, metrics | `EventSink` in `crates/api/src/events.rs` (only logs today); refused requests in the `Actor` extractor |
 | Rate limiting, tracing exporters, CORS hardening | `middleware()` in `crates/api/src/http/mod.rs` |

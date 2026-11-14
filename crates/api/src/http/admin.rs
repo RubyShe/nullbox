@@ -12,7 +12,7 @@ use crate::{ApiError, AppState};
 /// must match `ADMIN_TOKEN` (see `config.rs`).
 pub async fn export(State(state): State<AppState>, headers: HeaderMap) -> Result<Json<Vec<Ticket>>, ApiError> {
     let token = headers.get(ADMIN_TOKEN_HEADER).and_then(|value| value.to_str().ok());
-    if token != Some(state.config.admin_token.as_str()) {
+    if state.config.admin_token.is_empty() || token != Some(state.config.admin_token.as_str()) {
         return Err(ApiError::Forbidden);
     }
     Ok(Json(state.tickets.export().await?))

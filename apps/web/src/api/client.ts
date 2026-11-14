@@ -2,10 +2,9 @@
  * The single API client: the only module that calls `fetch`.
  *
  * - Base URL from `VITE_API_BASE_URL`, so the same bundle works behind any
- *   origin (Tauri, a CDN, a different domain). No cookies, no same-origin assumptions.
- * - Auth headers are added in `authHeaders()`: that's where a bearer token goes later.
+ *   origin (Tauri, a CDN, a different domain).
+ * - Worker authentication uses an HTTP-only session cookie.
  */
-import { getActorName } from "./actor";
 import type { BacklogStats } from "./generated/BacklogStats";
 import type { CreateTicketRequest } from "./generated/CreateTicketRequest";
 import type { CreateTicketResponse } from "./generated/CreateTicketResponse";
@@ -35,12 +34,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Worker identity. Today an untrusted name header; tomorrow `Authorization: Bearer …`. */
-function authHeaders(): Record<string, string> {
-  // Percent-encoded so non-ASCII names (e.g. 山田) survive HTTP headers.
-  return { "X-Actor-Name": encodeURIComponent(getActorName()) };
-}
-
 function ticketTokenHeaders(token: string): Record<string, string> {
   return { "X-Ticket-Token": token };
 }
@@ -50,13 +43,14 @@ async function request<T>(
   path: string,
   options: { body?: unknown; headers?: Record<string, string> } = {},
 ): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json", ...options.headers };
+  const headers: Record<string, string> = { Accept: "application/json", "X-Nullbox-Request": "1", ...options.headers };
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
 
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}/api${path}`, {
       method,
+      credentials: "include",
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
@@ -65,6 +59,7 @@ async function request<T>(
   }
 
   if (!res.ok) {
+    if (res.status === 401 && !path.startsWith("/auth/") && !path.startsWith("/public/")) window.dispatchEvent(new Event("nullbox-session-expired"));
     const error = (await res.json().catch(() => null)) as ErrorBody | null;
     throw new ApiError(error?.code ?? "internal", res.status, error?.message ?? res.statusText);
   }
@@ -72,6 +67,10 @@ async function request<T>(
 }
 
 export const api = {
+  signup: (username: string, password: string) => request<{ name: string }>("POST", "/auth/signup", { body: { username, password } }),
+  login: (username: string, password: string) => request<{ name: string }>("POST", "/auth/login", { body: { username, password } }),
+  logout: () => request<{ name: string }>("POST", "/auth/logout"),
+  session: () => request<{ name: string }>("GET", "/auth/session"),
   // customers
   createTicket: (body: CreateTicketRequest) =>
     request<CreateTicketResponse>("POST", "/tickets", { body }),
@@ -85,17 +84,15 @@ export const api = {
 
   // workers
   listTickets: (status?: TicketStatus) =>
-    request<Ticket[]>("GET", status ? `/tickets?status=${status}` : "/tickets", {
-      headers: authHeaders(),
-    }),
+    request<Ticket[]>("GET", status ? `/tickets?status=${status}` : "/tickets"),
   getTicket: (id: string) =>
-    request<TicketThread>("GET", `/tickets/${id}`, { headers: authHeaders() }),
+    request<TicketThread>("GET", `/tickets/${id}`, {}),
   addMessage: (id: string, body: WorkerMessageRequest) =>
-    request<Message>("POST", `/tickets/${id}/messages`, { body, headers: authHeaders() }),
+    request<Message>("POST", `/tickets/${id}/messages`, { body }),
   updateTicket: (id: string, body: UpdateTicketRequest) =>
-    request<Ticket>("PATCH", `/tickets/${id}`, { body, headers: authHeaders() }),
+    request<Ticket>("PATCH", `/tickets/${id}`, { body }),
   /** Yeet = close (status becomes `resolved`). */
   yeetTicket: (id: string) =>
-    request<Ticket>("POST", `/tickets/${id}/yeet`, { headers: authHeaders() }),
-  backlogStats: () => request<BacklogStats>("GET", "/stats/backlog", { headers: authHeaders() }),
+    request<Ticket>("POST", `/tickets/${id}/yeet`, {}),
+  backlogStats: () => request<BacklogStats>("GET", "/stats/backlog", {}),
 };

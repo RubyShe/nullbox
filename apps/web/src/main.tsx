@@ -11,6 +11,12 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } },
 });
 
+window.addEventListener("nullbox-session-expired", () => {
+  queryClient.removeQueries({ queryKey: ["tickets"] });
+  queryClient.removeQueries({ queryKey: ["backlog"] });
+  queryClient.invalidateQueries({ queryKey: ["session"] });
+});
+
 const root = document.getElementById("root");
 if (!root) throw new Error("#root missing from index.html");
 

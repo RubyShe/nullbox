@@ -13,6 +13,8 @@ const ja = {
     footer: "この受信箱の制作において、チケットは一枚も傷ついておりません。",
   },
 
+  auth: { title: "ワーカーログイン", username: "ユーザー名", password: "パスワード", login: "ログイン", logout: "ログアウト", signup: "アカウントを作成", backToLogin: "ログインに戻る", passwordHint: "12文字以上で、流出したことのないパスワードを使用してください。", created: "アカウントを作成しました。ログインしてください。" },
+
   status: {
     open: "生まれたて",
     in_progress: "見つめられ中",
@@ -150,8 +152,11 @@ const ja = {
   errors: {
     not_found: "隅々まで探しました。ソファの下まで。ありません。",
     missing_ticket_token: "このページには秘密リンクが必要です。",
-    missing_actor: "まず名前を選んでください（右上）。",
+    missing_actor: "ログインするか、ユーザー名とパスワードを確認してください。",
     forbidden: "ここを通すわけにはいかない。",
+    password_length: "パスワードは12文字以上、1024バイト以下にしてください。",
+    password_compromised: "このパスワードは流出しています。別のものを選んでください。",
+    username_taken: "このユーザー名は使用されています。",
     validation_failed: "入力内容に問題があるようです。各項目をご確認ください。",
     invalid_status_transition: "そのステータス変更はできません。時は一方向にしか流れません。",
     ticket_closed: "このチケットは完全に閉じられています。",

@@ -17,6 +17,9 @@ pub enum ErrorCode {
     MissingActor,
     Forbidden,
     ValidationFailed,
+    PasswordLength,
+    PasswordCompromised,
+    UsernameTaken,
     InvalidStatusTransition,
     TicketClosed,
     ServiceUnavailable,
@@ -38,10 +41,16 @@ pub enum ApiError {
     NotFound,
     #[error("missing X-Ticket-Token header")]
     MissingTicketToken,
-    #[error("missing or invalid X-Actor-Name header")]
+    #[error("login required or invalid credentials")]
     MissingActor,
     #[error("forbidden")]
     Forbidden,
+    #[error("password must be at least 12 characters and at most 1024 bytes")]
+    PasswordLength,
+    #[error("password appears in known breaches")]
+    PasswordCompromised,
+    #[error("username is already in use")]
+    UsernameTaken,
     #[error("validation failed: {0}")]
     Validation(String),
     #[error(transparent)]
@@ -66,6 +75,9 @@ impl ApiError {
             Self::MissingActor => ErrorCode::MissingActor,
             Self::Forbidden => ErrorCode::Forbidden,
             Self::Validation(_) => ErrorCode::ValidationFailed,
+            Self::PasswordLength => ErrorCode::PasswordLength,
+            Self::PasswordCompromised => ErrorCode::PasswordCompromised,
+            Self::UsernameTaken => ErrorCode::UsernameTaken,
             Self::InvalidTransition(_) => ErrorCode::InvalidStatusTransition,
             Self::TicketClosed => ErrorCode::TicketClosed,
             Self::ProbablyDns(_) => ErrorCode::ServiceUnavailable,
@@ -79,7 +91,7 @@ impl ApiError {
             Self::NotFound => StatusCode::NOT_FOUND,
             Self::MissingTicketToken | Self::MissingActor => StatusCode::UNAUTHORIZED,
             Self::Forbidden => StatusCode::FORBIDDEN,
-            Self::Validation(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            Self::Validation(_) | Self::PasswordLength | Self::PasswordCompromised | Self::UsernameTaken => StatusCode::UNPROCESSABLE_ENTITY,
             Self::InvalidTransition(_) | Self::TicketClosed => StatusCode::CONFLICT,
             Self::ProbablyDns(_) => StatusCode::SERVICE_UNAVAILABLE,
             Self::WorksOnMyMachine(_) => StatusCode::INTERNAL_SERVER_ERROR,

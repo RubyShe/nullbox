@@ -16,6 +16,8 @@ const en = {
     footer: "No tickets were harmed in the making of this inbox.",
   },
 
+  auth: { title: "Worker login", username: "Username", password: "Password", login: "Log in", logout: "Log out", signup: "Create account", backToLogin: "Back to login", passwordHint: "Use at least 12 characters. Passwords found in known breaches are rejected.", created: "Account created. Please log in." },
+
   status: {
     open: "Freshly Hatched",
     in_progress: "Being Stared At",
@@ -153,8 +155,11 @@ const en = {
   errors: {
     not_found: "We looked everywhere. Even under the couch. It's not there.",
     missing_ticket_token: "This page needs your secret link.",
-    missing_actor: "Pick a name first (top right).",
+    missing_actor: "Please log in or check your username and password.",
     forbidden: "You shall not pass.",
+    password_length: "Use at least 12 characters and no more than 1024 bytes.",
+    password_compromised: "This password has appeared in a known breach. Choose another.",
+    username_taken: "That username is already in use.",
     validation_failed: "Something in the form doesn't look right. Please check the fields.",
     invalid_status_transition: "That status change isn't allowed. Time only flows one way.",
     ticket_closed: "This ticket is closed for good.",

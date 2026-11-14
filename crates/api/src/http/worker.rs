@@ -1,5 +1,4 @@
-//! Worker endpoints. UNPROTECTED in the MVP: `Actor` is an untrusted header and
-//! `policy::can` allows everything. Both are the seams to replace.
+//! Worker endpoints require a demo session. Authorization policy currently allows all workers.
 
 use axum::Json;
 use axum::extract::State;

@@ -1,6 +1,7 @@
 //! Routes and the middleware stack.
 
 mod admin;
+mod auth;
 mod customer;
 pub mod extract;
 mod utility;
@@ -17,6 +18,10 @@ use extract::{ACTOR_HEADER, TICKET_TOKEN_HEADER};
 
 pub fn router(state: AppState) -> Router {
     let api = Router::new()
+        .route("/auth/signup", post(auth::signup))
+        .route("/auth/login", post(auth::login))
+        .route("/auth/logout", post(auth::logout))
+        .route("/auth/session", get(auth::session))
         // customers
         .route("/tickets", post(customer::create_ticket).get(worker::list_tickets))
         .route("/public/tickets/{id}", get(customer::get_ticket))
@@ -63,11 +68,13 @@ fn cors(config: &Config) -> CorsLayer {
         .collect();
     CorsLayer::new()
         .allow_origin(AllowOrigin::list(origins))
+        .allow_credentials(true)
         .allow_methods([Method::GET, Method::POST, Method::PATCH])
         .allow_headers([
             header::CONTENT_TYPE,
             header::AUTHORIZATION,
             HeaderName::from_static(ACTOR_HEADER),
+            HeaderName::from_static("x-nullbox-request"),
             HeaderName::from_static(TICKET_TOKEN_HEADER),
         ])
 }

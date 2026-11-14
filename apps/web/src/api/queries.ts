@@ -12,6 +12,10 @@ export const keys = {
   customerTicket: (id: string) => ["public-ticket", id] as const,
 };
 
+export function useSession() {
+  return useQuery({ queryKey: ["session"], queryFn: api.session, retry: false, staleTime: 0 });
+}
+
 export function useBacklogStats() {
   return useQuery({ queryKey: keys.backlog, queryFn: api.backlogStats, refetchInterval: 15_000 });
 }

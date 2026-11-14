@@ -1,4 +1,6 @@
 import { createBrowserRouter } from "react-router";
+import { RequireSession } from "./components/RequireSession";
+import { LoginPage } from "./routes/LoginPage";
 import { AppShell } from "./components/AppShell";
 import { CustomerTicketPage } from "./routes/customer/CustomerTicketPage";
 import { NewTicketPage } from "./routes/customer/NewTicketPage";
@@ -17,9 +19,11 @@ export const router = createBrowserRouter([
       // customer portal
       { path: "/", element: <NewTicketPage /> },
       { path: "/t/:id", element: <CustomerTicketPage /> },
-      // worker inbox
-      { path: "/inbox", element: <InboxPage /> },
-      { path: "/inbox/:id", element: <WorkerTicketPage /> },
+      { path: "/login", element: <LoginPage /> },
+      { element: <RequireSession />, children: [
+        { path: "/inbox", element: <InboxPage /> },
+        { path: "/inbox/:id", element: <WorkerTicketPage /> },
+      ] },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

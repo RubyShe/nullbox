@@ -1,6 +1,8 @@
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
-import { getActorName, setActorName, subscribeActor } from "../api/actor";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "../api/client";
+import { useSession } from "../api/queries";
 import { dictionaries, type Locale, useCopy, useLocale } from "../copy/CopyProvider";
 import { useKonami } from "../hooks/useKonami";
 import styles from "./AppShell.module.css";
@@ -33,7 +35,7 @@ export function AppShell() {
           <NavLink to="/inbox">{copy.app.nav.inbox}</NavLink>
         </nav>
         <div className={styles.tools}>
-          {pathname.startsWith("/inbox") && <ActorPicker />}
+          {pathname.startsWith("/inbox") && <SessionControls />}
           <LanguageSwitcher />
         </div>
       </header>
@@ -66,19 +68,12 @@ function LanguageSwitcher() {
   );
 }
 
-/** Not a login: the worker just tells us who they are (see api/actor.ts). */
-function ActorPicker() {
+function SessionControls() {
+  const session = useSession();
+  const client = useQueryClient();
   const copy = useCopy();
-  const name = useSyncExternalStore(subscribeActor, getActorName);
-  return (
-    <label className={styles.actor} title={copy.worker.actorHint}>
-      <span>{copy.worker.you}</span>
-      <input
-        value={name}
-        placeholder={copy.worker.actorPlaceholder}
-        maxLength={100}
-        onChange={(event) => setActorName(event.target.value)}
-      />
-    </label>
-  );
+  if (!session.data) return null;
+  return <div className={styles.actor}><span>{session.data.name}</span><button type="button" onClick={async () => {
+    try { await api.logout(); } finally { client.clear(); await client.invalidateQueries({ queryKey: ["session"] }); }
+  }}>{copy.auth.logout}</button></div>;
 }

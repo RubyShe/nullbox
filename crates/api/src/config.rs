@@ -13,6 +13,7 @@ pub struct Config {
     pub public_web_url: String,
     /// `ADMIN_TOKEN`: unlocks `GET /api/admin/export`, the CEO's spreadsheet.
     pub admin_token: String,
+    pub cookie_secure: bool,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -39,8 +40,8 @@ impl Config {
                 .filter(|origin| !origin.is_empty())
                 .collect(),
             public_web_url: var("PUBLIC_WEB_URL", "http://localhost:5173").trim_end_matches('/').to_owned(),
-            // TODO(kenji): this default is only here so the export keeps working on the demo box. Remove before launch.
-            admin_token: var("ADMIN_TOKEN", "REDACTED_LEAKED_ADMIN_TOKEN"),
+            admin_token: var("ADMIN_TOKEN", ""),
+            cookie_secure: var("COOKIE_SECURE", "false").parse().map_err(|e: std::str::ParseBoolError| ConfigError { name: "COOKIE_SECURE", reason: e.to_string() })?,
         })
     }
 }
