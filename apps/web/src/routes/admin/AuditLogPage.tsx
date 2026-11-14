@@ -72,7 +72,9 @@ export function AuditLogPage() {
 
       {log.isLoading && token ? <Loading /> : null}
       {log.isError ? <ErrorMessage error={log.error} /> : null}
-      {log.data && log.data.length === 0 ? <p className={styles.muted}>{copy.audit.empty}</p> : null}
+      {log.data && log.data.length === 0 ? (
+        <p className={styles.muted}>{copy.audit.empty}</p>
+      ) : null}
       {log.data && log.data.length > 0 ? (
         <div className={styles.tableWrap}>
           <table className={styles.auditTable}>

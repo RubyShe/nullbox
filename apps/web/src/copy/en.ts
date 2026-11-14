@@ -124,7 +124,8 @@ const en = {
 
   audit: {
     title: "Audit log",
-    intro: "Every API request and every ticket event, newest first. Tokens are stored as fingerprints only.",
+    intro:
+      "Every API request and every ticket event, newest first. Tokens are stored as fingerprints only.",
     adminToken: "Admin token",
     search: "Search",
     searchPlaceholder: "Subject code, path, actor, IP, token fingerprint…",
